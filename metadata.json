@@ -1,0 +1,6 @@
+{
+  "name": "Gemini AI Studio Chatbot",
+  "description": "Modern full-stack AI chatbot application powered by Google Gemini API with streaming responses, conversation history, and rich markdown rendering.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

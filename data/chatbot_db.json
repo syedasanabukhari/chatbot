@@ -1,0 +1,48 @@
+{
+  "conversations": [
+    {
+      "id": "b87c5b3b-4d0c-4055-ac50-365ebabe468d",
+      "title": "Welcome to Gemini AI Chatbot",
+      "createdAt": "2026-10-23T04:39:03.611Z",
+      "updatedAt": "2026-10-23T04:52:06.412Z",
+      "model": "gemini-3.1-flash-lite",
+      "systemInstruction": "You are a modern, helpful, friendly, and precise AI assistant. Format your responses with clean Markdown, clear headings, structured lists, and syntax-highlighted code blocks where helpful."
+    }
+  ],
+  "messages": [
+    {
+      "id": "3f1e3a79-2bb6-4ad6-8be9-e7f910b153d9",
+      "conversationId": "b87c5b3b-4d0c-4055-ac50-365ebabe468d",
+      "role": "user",
+      "content": "Hi! What can you do, and how is this chatbot built?",
+      "createdAt": "2026-10-23T04:38:03.612Z",
+      "updatedAt": "2026-10-23T04:38:03.612Z"
+    },
+    {
+      "id": "52734927-80fe-4dea-bef6-7f28b34282a4",
+      "conversationId": "b87c5b3b-4d0c-4055-ac50-365ebabe468d",
+      "role": "assistant",
+      "content": "👋 **Welcome! I'm your Gemini-powered AI Assistant.**\n\nHere's an overview of what this application features:\n\n### ⚡ Key Capabilities\n1. **Real-time SSE Streaming**: High-speed, responsive token generation directly from Google Gemini API.\n2. **Full CRUD Chat Management**: Create new chats, rename them, edit prompts, regenerate answers, and delete with confirmations.\n3. **Rich Markdown & Code Highlighting**: Full Markdown support including tables, lists, and syntax-highlighted code blocks with 1-click copy:\n\n```typescript\n// Server-side streaming endpoint snippet\nfor await (const chunk of responseStream) {\n  const text = chunk.text;\n  if (text) {\n    res.write(`data: ${JSON.stringify({ chunk: text })}\\n\\n`);\n  }\n}\n```\n\n4. **Multi-device Responsive Design**: Collapsible sidebar, mobile drawer, keyboard shortcuts, and theme switcher (Light / Dark).\n5. **Robust Architecture**: Server-side credentials protection, request validation with Zod, and persistent conversation history.\n\nFeel free to ask a question, start a **New Chat**, or test out the prompts on the welcome screen!",
+      "createdAt": "2026-10-23T04:39:03.611Z",
+      "updatedAt": "2026-10-23T04:39:03.611Z"
+    },
+    {
+      "id": "28a76296-de0b-45bd-a7d0-7afdb85904ec",
+      "conversationId": "b87c5b3b-4d0c-4055-ac50-365ebabe468d",
+      "role": "user",
+      "content": "hi",
+      "createdAt": "2026-10-23T04:44:17.254Z",
+      "updatedAt": "2026-10-23T04:44:17.254Z",
+      "isError": false
+    },
+    {
+      "id": "d1c378a7-8fe3-44a3-a652-a1fffcd9c412",
+      "conversationId": "b87c5b3b-4d0c-4055-ac50-365ebabe468d",
+      "role": "user",
+      "content": "hi",
+      "createdAt": "2026-10-23T04:52:06.412Z",
+      "updatedAt": "2026-10-23T04:52:06.412Z",
+      "isError": false
+    }
+  ]
+}
