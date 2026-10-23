@@ -8,7 +8,8 @@ interface DatabaseSchema {
   messages: Message[];
 }
 
-const DATA_DIR = path.resolve(process.cwd(), 'data');
+const isVercel = Boolean(process.env.VERCEL);
+const DATA_DIR = isVercel ? '/tmp/data' : path.resolve(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'chatbot_db.json');
 const TMP_FILE = path.join(DATA_DIR, 'chatbot_db.tmp.json');
 
@@ -23,8 +24,23 @@ class Database {
   }
 
   private init() {
+    const seedSourceFile = path.resolve(process.cwd(), 'data', 'chatbot_db.json');
+
+    if (isVercel && !fs.existsSync(DB_FILE) && fs.existsSync(seedSourceFile)) {
+      try {
+        if (!fs.existsSync(DATA_DIR)) {
+          fs.mkdirSync(DATA_DIR, { recursive: true });
+        }
+        fs.copyFileSync(seedSourceFile, DB_FILE);
+      } catch (err) {
+        console.warn('Could not copy seed DB on Vercel, seeding in-memory:', err);
+      }
+    }
+
     if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+      try {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      } catch (_) {}
     }
 
     if (fs.existsSync(DB_FILE)) {
@@ -50,7 +66,7 @@ class Database {
       fs.writeFileSync(TMP_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
       fs.renameSync(TMP_FILE, DB_FILE);
     } catch (err) {
-      console.error('Database persist error:', err);
+      console.warn('Database persist notice (using in-memory store):', err);
     }
   }
 

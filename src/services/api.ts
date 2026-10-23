@@ -7,23 +7,44 @@ export interface StreamEventCallbacks {
   onError: (error: string, errorMsg?: Message) => void;
 }
 
+async function handleResponse<T>(res: Response, fallbackError: string): Promise<T> {
+  const contentType = res.headers.get('content-type') || '';
+
+  if (!res.ok) {
+    if (contentType.includes('application/json')) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || err.message || `${fallbackError} (HTTP ${res.status})`);
+    } else {
+      if (res.status === 404) {
+        throw new Error(`API route not found (HTTP 404). Ensure Vercel serverless functions are configured.`);
+      }
+      const rawText = await res.text().catch(() => '');
+      throw new Error(rawText.slice(0, 80) || `${fallbackError} (HTTP ${res.status})`);
+    }
+  }
+
+  if (contentType.includes('application/json')) {
+    return res.json() as Promise<T>;
+  }
+
+  throw new Error(`Invalid response format from server (expected JSON, received ${contentType || 'text'})`);
+}
+
 export const api = {
   async getHealth() {
     const res = await fetch('/api/health');
-    return res.json();
+    return handleResponse<{ status: string; hasApiKey: boolean; defaultModel: string }>(res, 'Failed to fetch health');
   },
 
   async getModels() {
     const res = await fetch('/api/models');
-    if (!res.ok) throw new Error('Failed to load models');
-    return res.json();
+    return handleResponse<{ models: any[] }>(res, 'Failed to load models');
   },
 
   async listConversations(query?: string): Promise<Conversation[]> {
     const url = query ? `/api/conversations?q=${encodeURIComponent(query)}` : '/api/conversations';
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch conversations');
-    const data = await res.json();
+    const data = await handleResponse<{ conversations: Conversation[] }>(res, 'Failed to fetch conversations');
     return data.conversations;
   },
 
@@ -33,21 +54,13 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data || {}),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to create conversation');
-    }
-    const resData = await res.json();
+    const resData = await handleResponse<{ conversation: Conversation }>(res, 'Failed to create conversation');
     return resData.conversation;
   },
 
   async getConversation(id: string): Promise<{ conversation: Conversation; messages: Message[] }> {
     const res = await fetch(`/api/conversations/${id}`);
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Conversation not found');
-    }
-    return res.json();
+    return handleResponse<{ conversation: Conversation; messages: Message[] }>(res, 'Conversation not found');
   },
 
   async updateConversation(id: string, updates: { title?: string; systemInstruction?: string; model?: string }): Promise<Conversation> {
@@ -56,11 +69,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to update conversation');
-    }
-    const data = await res.json();
+    const data = await handleResponse<{ conversation: Conversation }>(res, 'Failed to update conversation');
     return data.conversation;
   },
 
@@ -68,10 +77,7 @@ export const api = {
     const res = await fetch(`/api/conversations/${id}`, {
       method: 'DELETE',
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to delete conversation');
-    }
+    await handleResponse<{ success: boolean }>(res, 'Failed to delete conversation');
   },
 
   async updateMessage(conversationId: string, messageId: string, content: string): Promise<Message> {
@@ -80,11 +86,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content }),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to update message');
-    }
-    const data = await res.json();
+    const data = await handleResponse<{ message: Message }>(res, 'Failed to update message');
     return data.message;
   },
 
@@ -92,17 +94,14 @@ export const api = {
     const res = await fetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
       method: 'DELETE',
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to delete message');
-    }
+    await handleResponse<{ success: boolean }>(res, 'Failed to delete message');
   },
 
   async clearAll(): Promise<void> {
     const res = await fetch('/api/conversations/clear', {
       method: 'POST',
     });
-    if (!res.ok) throw new Error('Failed to clear conversations');
+    await handleResponse<{ success: boolean }>(res, 'Failed to clear conversations');
   },
 
   async streamChat(
@@ -123,9 +122,18 @@ export const api = {
       signal,
     });
 
+    const contentType = response.headers.get('content-type') || '';
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error ${response.status}`);
+      if (contentType.includes('application/json')) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      } else {
+        if (response.status === 404) {
+          throw new Error('API streaming endpoint not found (HTTP 404). Check Vercel serverless configuration.');
+        }
+        throw new Error(`HTTP error ${response.status}`);
+      }
     }
 
     if (!response.body) {
@@ -194,9 +202,15 @@ export const api = {
       signal,
     });
 
+    const contentType = response.headers.get('content-type') || '';
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error ${response.status}`);
+      if (contentType.includes('application/json')) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      } else {
+        throw new Error(`HTTP error ${response.status}`);
+      }
     }
 
     if (!response.body) {
